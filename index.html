@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistem Pemantauan RORO & Rumah Sampah Hospital Kemaman</title>
+  
+  <!-- Tailwind CSS & FontAwesome Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            kkm: {
+              navy: '#1a2b4c',
+              dark: '#0f1a30',
+              gold: '#d4af37',
+              goldLight: '#f4e5b2',
+              greyBg: '#f8fafc',
+              border: '#e2e8f0'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; color: #1e293b; }
+    .sidebar-active { background-color: #d4af37; color: #1a2b4c; font-weight: bold; }
+    .badge-patuh { background-color: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+    .badge-xpatuh { background-color: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+    .badge-warning { background-color: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+    .modal-overlay { background-color: rgba(15, 26, 48, 0.7); backdrop-filter: blur(4px); }
+  </style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden">
+
+  <!-- CONFIGURATION SECTION -->
+  <script>
+    const CONFIG = {
+      // MASUKKAN URL WEB APP APPS SCRIPT ANDA DI SINI
+      API_URL: "https://script.google.com/macros/s/YOUR_APPS_SCRIPT_DEPLOYMENT_ID/exec",
+      APP_NAME: "Sistem Pemantauan RORO & Rumah Sampah Hospital Kemaman",
+      VERSION: "1.0.0",
+      LOCATION_ID: "RS-HKM-001"
+    };
+
+    let currentUser = null;
+    let activeModule = 'dashboard';
+  </script>
+
+  <!-- SIDEBAR NAVIGATION -->
+  <aside id="sidebar" class="w-full md:w-64 bg-kkm-navy text-white flex-col flex-shrink-0 hidden md:flex transition-all duration-300 z-20">
+    <!-- Header Sidebar -->
+    <div class="p-4 bg-kkm-dark flex items-center gap-3 border-b border-kkm-gold/30">
+      <div class="w-10 h-10 rounded-full bg-kkm-gold flex items-center justify-center text-kkm-navy font-bold text-xl shadow">
+        <i class="fa-solid => fa-hospital-user"></i>
+      </div>
+      <div>
+        <h1 class="font-bold text-sm tracking-wide leading-tight text-kkm-gold">HOSPITAL KEMAMAN</h1>
+        <p class="text-xs text-gray-300">Sistem Pemantauan RORO</p>
+      </div>
+    </div>
+
+    <!-- Navigation Menu -->
+    <nav class="flex-1 overflow-y-auto p-3 space-y-1 text-sm">
+      <a href="#" onclick="switchModule('dashboard')" id="nav-dashboard" class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg transition hover:bg-white/10">
+        <i class="fa-solid fa-chart-line w-5 text-center"></i> Dashboard Utama
+      </a>
+      <a href="#" onclick="switchModule('pemantauan')" id="nav-pemantauan" class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg transition hover:bg-white/10">
+        <i class="fa-solid fa-clipboard-check w-5 text-center"></i> Pemantauan Harian
+      </a>
+      <a href="#" onclick="switchModule('roro')" id="nav-roro" class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg transition hover:bg-white/10">
+        <i class="fa-solid fa-truck-ramp-box w-5 text-center"></i> Pertukaran RORO
+      </a>
+      <a href="#" onclick="switchModule('ketidakpatuhan')" id="nav-ketidakpatuhan" class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg transition hover:bg-white/10">
+        <i class="fa-solid fa-triangle-exclamation w-5 text-center"></i> Ketidakpatuhan (NC)
+      </a>
+      <a href="#" onclick="switchModule('capa')" id="nav-capa" class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg transition hover:bg-white/10">
+        <i class="fa-solid fa-screwdriver-wrench w-5 text-center"></i> Tindakan Pembetulan
+      </a>
+      <a href="#" onclick="switchModule('laporan')" id="nav-laporan" class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg transition hover:bg-white/10">
+        <i class="fa-solid fa-file-pdf w-5 text-center"></i> Laporan Rasmi PDF
+      </a>
+      
+      <div class="pt-3 pb-1 px-3 text-xs font-semibold text-kkm-gold/80 uppercase tracking-wider">Pentadbiran</div>
+      
+      <a href="#" onclick="switchModule('audit')" id="nav-audit" class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg transition hover:bg-white/10">
+        <i class="fa-solid fa-clock-rotate-left w-5 text-center"></i> Audit Trail
+      </a>
+      <a href="#" onclick="switchModule('users')" id="nav-users" class="admin-only sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg transition hover:bg-white/10 hidden">
+        <i class="fa-solid fa-users-gear w-5 text-center"></i> Pengurusan Pengguna
+      </a>
+      <a href="#" onclick="switchModule('settings')" id="nav-settings" class="admin-only sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg transition hover:bg-white/10 hidden">
+        <i class="fa-solid fa-sliders w-5 text-center"></i> Tetapan Sistem
+      </a>
+      <a href="#" onclick="openQrModal()" class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg transition hover:bg-white/10">
+        <i class="fa-solid fa-qrcode w-5 text-center"></i> QR Code Premis
+      </a>
+    </nav>
+
+    <!-- User Profile Footer -->
+    <div class="p-3 bg-kkm-dark/80 border-t border-kkm-gold/20 flex items-center justify-between text-xs">
+      <div class="flex items-center gap-2 overflow-hidden">
+        <div class="w-8 h-8 rounded-full bg-kkm-gold/20 text-kkm-gold flex items-center justify-center font-bold">
+          <span id="user-avatar-initial">A</span>
+        </div>
+        <div class="truncate">
+          <p id="user-display-name" class="font-semibold truncate">Pengguna</p>
+          <p id="user-display-role" class="text-gray-400 text-[10px]">Penyelia</p>
+        </div>
+      </div>
+      <button onclick="logout()" title="Log Keluar" class="text-red-400 hover:text-red-300 p-2 rounded">
+        <i class="fa-solid fa-right-from-bracket text-base"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT AREA -->
+  <main class="flex-1 flex flex-col h-full overflow-hidden bg-kkm-greyBg">
+    
+    <!-- TOPBAR HEADER -->
+    <header class="bg-white border-b border-kkm-border px-4 py-3 flex items-center justify-between shadow-sm z-10">
+      <div class="flex items-center gap-3">
+        <button onclick="toggleMobileSidebar()" class="md:hidden text-kkm-navy text-xl focus:outline-none">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <h2 id="module-title" class="text-base md:text-lg font-bold text-kkm-navy flex items-center gap-2">
+          <i class="fa-solid fa-chart-line text-kkm-gold"></i> Dashboard Utama
+        </h2>
+      </div>
+      <div class="flex items-center gap-3 text-xs md:text-sm">
+        <span class="hidden md:inline-block px-3 py-1 bg-blue-50 text-kkm-navy font-medium rounded-full border border-blue-200" id="current-date-badge">
+          <i class="fa-regular fa-calendar mr-1"></i> Tarikh
+        </span>
+        <div id="connection-status" class="flex items-center gap-1.5 text-xs text-emerald-600 font-semibold bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Online
+        </div>
+      </div>
+    </header>
+
+    <!-- CONTENT BODY (SCROLLABLE) -->
+    <div id="content-container" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+
+      <!-- ================= LOGIN SCREEN ================= -->
+      <div id="section-login" class="max-w-md mx-auto my-12 bg-white p-8 rounded-2xl shadow-xl border border-kkm-gold/30">
+        <div class="text-center mb-6">
+          <div class="w-16 h-16 bg-kkm-navy text-kkm-gold rounded-full flex items-center justify-center text-3xl mx-auto mb-3 shadow">
+            <i class="fa-solid fa-hospital"></i>
+          </div>
+          <h2 class="text-xl font-bold text-kkm-navy">SISTEM PEMANTAUAN RORO</h2>
+          <p class="text-xs text-gray-500 font-medium">Hospital Kemaman • Kementerian Kesihatan Malaysia</p>
+        </div>
+        <form onsubmit="handleLogin(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Nama Pengguna (Username)</label>
+            <input type="text" id="login-username" required class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-kkm-navy focus:outline-none text-sm" placeholder="Contoh: admin / penyelia">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Kod PIN Pengguna</label>
+            <input type="password" id="login-pin" required maxlength="6" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-kkm-navy focus:outline-none text-sm tracking-widest text-center text-lg font-bold" placeholder="••••••">
+          </div>
+          <button type="submit" id="btn-login" class="w-full bg-kkm-navy hover:bg-kkm-dark text-kkm-gold font-bold py-3 rounded-lg shadow transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-lock"></i> LOG MASUK SISTEM
+          </button>
+        </form>
+        <div class="mt-6 text-center text-xs text-gray-400">
+          Versi <span id="app-version-display">1.0.0</span> • KKM Hospital Kemaman
+        </div>
+      </div>
+
+      <!-- ================= DASHBOARD MODULE ================= -->
+      <div id="section-dashboard" class="hidden space-y-6">
+        
+        <!-- Status Hari Ini Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Card 1: Pemantauan -->
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-kkm-border flex items-center justify-between">
+            <div>
+              <p class="text-xs font-bold uppercase text-gray-400 tracking-wider">Pemantauan Hari Ini</p>
+              <h3 id="dash-status-pemantauan" class="text-lg font-bold text-gray-800 mt-1">
+                <span class="inline-flex items-center gap-1.5 text-amber-600"><i class="fa-solid fa-spinner animate-spin"></i> Semakan...</span>
+              </h3>
+              <p id="dash-penyelia-oncall" class="text-xs text-gray-500 mt-1">Penyelia: -</p>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-blue-50 text-kkm-navy flex items-center justify-center text-xl">
+              <i class="fa-solid fa-clipboard-check"></i>
+            </div>
+          </div>
+
+          <!-- Card 2: Rumah Sampah -->
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-kkm-border flex items-center justify-between">
+            <div>
+              <p class="text-xs font-bold uppercase text-gray-400 tracking-wider">Keadaan Rumah Sampah</p>
+              <h3 id="dash-status-rs" class="text-lg font-bold text-gray-800 mt-1">-</h3>
+              <p class="text-xs text-gray-500 mt-1">Lokasi: RS-HKM-001</p>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl">
+              <i class="fa-solid fa-dumpster"></i>
+            </div>
+          </div>
+
+          <!-- Card 3: RORO Today -->
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-kkm-border flex items-center justify-between">
+            <div>
+              <p class="text-xs font-bold uppercase text-gray-400 tracking-wider">Pertukaran RORO</p>
+              <h3 id="dash-status-roro" class="text-lg font-bold text-gray-800 mt-1">-</h3>
+              <p id="dash-roro-time" class="text-xs text-gray-500 mt-1">Masa Dikeluarkan: -</p>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
+              <i class="fa-solid fa-truck-arrow-right"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Monthly Statistics Overview -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-kkm-border">
+          <h3 class="text-sm font-bold text-kkm-navy uppercase tracking-wider mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-chart-pie text-kkm-gold"></i> Statistik & Pematuhan Operasi Bulan Semasa
+          </h3>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div class="p-4 bg-gray-50 rounded-lg border border-gray-100">
+              <p class="text-2xl font-black text-kkm-navy" id="stat-monitored-days">0/0</p>
+              <p class="text-xs text-gray-500 font-semibold mt-1">Hari Dipantau</p>
+            </div>
+            <div class="p-4 bg-gray-50 rounded-lg border border-gray-100">
+              <p class="text-2xl font-black text-emerald-600" id="stat-compliance-rate">0%</p>
+              <p class="text-xs text-gray-500 font-semibold mt-1">% Pematuhan Pemantauan</p>
+            </div>
+            <div class="p-4 bg-gray-50 rounded-lg border border-gray-100">
+              <p class="text-2xl font-black text-blue-600" id="stat-roro-exchanges">0</p>
+              <p class="text-xs text-gray-500 font-semibold mt-1">Jumlah Pertukaran RORO</p>
+            </div>
+            <div class="p-4 bg-gray-50 rounded-lg border border-gray-100">
+              <p class="text-2xl font-black text-red-600" id="stat-nc-capa">0 / 0</p>
+              <p class="text-xs text-gray-500 font-semibold mt-1">Ketidakpatuhan / CAPA Terbuka</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Action Buttons -->
+        <div class="flex flex-wrap gap-3">
+          <button onclick="switchModule('pemantauan')" class="px-5 py-3 bg-kkm-navy hover:bg-kkm-dark text-kkm-gold font-bold rounded-xl shadow transition flex items-center gap-2 text-sm">
+            <i class="fa-solid fa-plus-circle"></i> Rekod Pemantauan Harian
+          </button>
+          <button onclick="switchModule('roro')" class="px-5 py-3 bg-white hover:bg-gray-50 text-kkm-navy font-bold rounded-xl shadow-sm border border-kkm-border transition flex items-center gap-2 text-sm">
+            <i class="fa-solid fa-truck-field"></i> Rekod Pertukaran RORO
+          </button>
+        </div>
+      </div>
+
+      <!-- ================= PEMANTAUAN HARIAN MODULE ================= -->
+      <div id="section-pemantauan" class="hidden max-w-4xl mx-auto space-y-6">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-kkm-border">
+          <div class="border-b border-gray-200 pb-4 mb-6 flex justify-between items-center">
+            <div>
+              <h3 class="text-base font-bold text-kkm-navy">BORANG PEMANTAUAN HARIAN RUMAH SAMPAH & RORO</h3>
+              <p class="text-xs text-gray-500">Sila lengkapkan semakan harian dan bukti foto digital.</p>
+            </div>
+            <span class="px-3 py-1 bg-kkm-gold/20 text-kkm-navy font-bold text-xs rounded-full border border-kkm-gold">
+              RS-HKM-001
+            </span>
+          </div>
+
+          <form onsubmit="submitDailyMonitoring(event)" class="space-y-6">
+            <!-- Section 1: Maklumat Asas -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <div>
+                <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Tarikh Pemantauan</label>
+                <input type="date" id="pm-tarikh" required class="w-full px-3 py-2 bg-white rounded border border-gray-300 text-sm focus:ring-2 focus:ring-kkm-navy">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Masa Pemeriksaan</label>
+                <input type="time" id="pm-masa" required class="w-full px-3 py-2 bg-white rounded border border-gray-300 text-sm focus:ring-2 focus:ring-kkm-navy">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Shift Bertugas</label>
+                <select id="pm-shift" class="w-full px-3 py-2 bg-white rounded border border-gray-300 text-sm focus:ring-2 focus:ring-kkm-navy">
+                  <option value="PAGI">PAGI (8:00 AM - 4:00 PM)</option>
+                  <option value="PETANG">PETANG (4:00 PM - 11:00 PM)</option>
+                  <option value="MALAM">MALAM (11:00 PM - 8:00 AM)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Section 2: Checklist Pemeriksaan -->
+            <div class="space-y-3">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-kkm-navy border-b pb-1">Senarai Semak Kebersihan & Pematuhan</h4>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                <label class="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-blue-50/50">
+                  <input type="checkbox" id="chk-rs-bersih" checked class="w-4 h-4 text-kkm-navy rounded focus:ring-kkm-navy">
+                  <span class="ml-3 font-medium text-gray-700">Rumah Sampah bersih & teratur</span>
+                </label>
+                <label class="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-blue-50/50">
+                  <input type="checkbox" id="chk-tiada-berserak" checked class="w-4 h-4 text-kkm-navy rounded focus:ring-kkm-navy">
+                  <span class="ml-3 font-medium text-gray-700">Tiada sampah berserak di lantai</span>
+                </label>
+                <label class="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-blue-50/50">
+                  <input type="checkbox" id="chk-tiada-tumpahan" checked class="w-4 h-4 text-kkm-navy rounded focus:ring-kkm-navy">
+                  <span class="ml-3 font-medium text-gray-700">Tiada tumpahan cecair / leachate</span>
+                </label>
+                <label class="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-blue-50/50">
+                  <input type="checkbox" id="chk-tiada-bau" checked class="w-4 h-4 text-kkm-navy rounded focus:ring-kkm-navy">
+                  <span class="ml-3 font-medium text-gray-700">Tiada bau luar biasa yang teruk</span>
+                </label>
+                <label class="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-blue-50/50">
+                  <input type="checkbox" id="chk-laluan-lapang" checked class="w-4 h-4 text-kkm-navy rounded focus:ring-kkm-navy">
+                  <span class="ml-3 font-medium text-gray-700">Laluan kenderaan & lori RORO tidak terhalang</span>
+                </label>
+                <label class="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-blue-50/50">
+                  <input type="checkbox" id="chk-luar-bersih" checked class="w-4 h-4 text-kkm-navy rounded focus:ring-kkm-navy">
+                  <span class="ml-3 font-medium text-gray-700">Kawasan sekitar persekitaran luar bersih</span>
+                </label>
+                <label class="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-blue-50/50">
+                  <input type="checkbox" id="chk-roro-ada" checked class="w-4 h-4 text-kkm-navy rounded focus:ring-kkm-navy">
+                  <span class="ml-3 font-medium text-gray-700">Tong RORO berada di tapak khas</span>
+                </label>
+                <label class="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-blue-50/50">
+                  <input type="checkbox" id="chk-roro-elok" checked class="w-4 h-4 text-kkm-navy rounded focus:ring-kkm-navy">
+                  <span class="ml-3 font-medium text-gray-700">Keadaan fizikal RORO elok & elakkan karat teruk</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Section 3: Status & Tahap RORO -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Status Keadaan Rumah Sampah</label>
+                <select id="pm-status-rs" class="w-full px-3 py-2 bg-white rounded border border-gray-300 text-sm font-semibold text-kkm-navy">
+                  <option value="MEMUASKAN">🟢 MEMUASKAN (PATUH)</option>
+                  <option value="PERLU_PERHATIAN">🟠 PERLU PERHATIAN</option>
+                  <option value="TIDAK_MEMUASKAN">🔴 TIDAK MEMUASKAN (KETIDAKPATUHAN)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Tahap Muatan RORO Harian</label>
+                <select id="pm-tahap-roro" class="w-full px-3 py-2 bg-white rounded border border-gray-300 text-sm font-semibold">
+                  <option value="NORMAL">NORMAL (< 50%)</option>
+                  <option value="HAMPIR_PENUH">HAMPIR PENUH (70% - 80%)</option>
+                  <option value="PENUH">PENUH (100% - PERLU PERTUKARAN)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Section 4: Muat Naik Foto Bukti Digital -->
+            <div class="space-y-2 border-t pt-4">
+              <label class="block text-xs font-bold text-gray-700 uppercase">
+                <i class="fa-solid fa-camera text-kkm-gold mr-1"></i> Muat Naik Bukti Foto Pemantauan (Google Drive)
+              </label>
+              <input type="file" id="pm-foto-input" accept="image/*" capture="environment" class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-kkm-navy file:text-kkm-gold hover:file:bg-kkm-dark">
+              <div id="pm-foto-preview" class="hidden mt-2">
+                <img id="pm-img-tag" src="" class="h-32 rounded-lg border border-gray-300 shadow-sm object-cover">
+              </div>
+            </div>
+
+            <!-- Catatan -->
+            <div>
+              <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Catatan Tambahan / Ulasan Penyelia</label>
+              <textarea id="pm-catatan" rows="2" class="w-full px-3 py-2 rounded border border-gray-300 text-sm" placeholder="Nyatakan sebarang ulasan tambahan jika ada..."></textarea>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="pt-4 border-t flex justify-end gap-3">
+              <button type="button" onclick="switchModule('dashboard')" class="px-5 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-lg text-sm hover:bg-gray-200">
+                Batal
+              </button>
+              <button type="submit" id="btn-save-pm" class="px-6 py-2.5 bg-kkm-navy text-kkm-gold font-bold rounded-lg text-sm shadow hover:bg-kkm-dark flex items-center gap-2">
+                <i class="fa-solid fa-cloud-arrow-up"></i> SIMPAN PEMANTAUAN HARIAN
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- ================= PERTUKARAN RORO MODULE ================= -->
+      <div id="section-roro" class="hidden max-w-4xl mx-auto space-y-6">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-kkm-border">
+          <h3 class="text-base font-bold text-kkm-navy border-b pb-3 mb-4">REKOD PERTUKARAN TONG RORO HARIAN</h3>
+          <form onsubmit="submitRoroExchange(event)" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Tarikh Pertukaran</label>
+                <input type="date" id="roro-tarikh" required class="w-full px-3 py-2 rounded border text-sm">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Status Pertukaran RORO</label>
+                <select id="roro-status" class="w-full px-3 py-2 rounded border text-sm font-bold text-kkm-navy">
+                  <option value="TELAH_DITUKAR">🟢 TELAH DITUKAR (SELESAI)</option>
+                  <option value="DALAM_PROSES">🟠 DALAM PROSES PERTUKARAN</option>
+                  <option value="BELUM_DITUKAR">🔴 BELUM DITUKAR</option>
+                  <option value="TIDAK_DITUKAR">⚪ TIDAK DITUKAR (CUTI / DIKECUALIKAN)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Masa RORO Lama Dikeluarkan</label>
+                <input type="time" id="roro-masa-keluar" class="w-full px-3 py-2 rounded border text-sm">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Masa RORO Baharu Ditempatkan</label>
+                <input type="time" id="roro-masa-masuk" class="w-full px-3 py-2 rounded border text-sm">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Nama Pemandu Lori</label>
+                <input type="text" id="roro-pemandu" placeholder="Contoh: Encik Rosli" class="w-full px-3 py-2 rounded border text-sm">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700 uppercase mb-1">No. Pendaftaran Kenderaan (Plat)</label>
+                <input type="text" id="roro-noplat" placeholder="Contoh: TBY 8821" class="w-full px-3 py-2 rounded border text-sm uppercase">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Nama Syarikat Kontraktor Sisa</label>
+              <input type="text" id="roro-kontraktor" value="Alam Flora / Kontraktor dilantik" class="w-full px-3 py-2 rounded border text-sm">
+            </div>
+
+            <!-- Upload Foto RORO -->
+            <div class="border-t pt-3">
+              <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Muat Naik Foto Pertukaran RORO</label>
+              <input type="file" id="roro-foto-input" accept="image/*" capture="environment" class="w-full text-xs text-gray-500">
+            </div>
+
+            <div class="pt-3 border-t flex justify-end">
+              <button type="submit" id="btn-save-roro" class="px-6 py-2.5 bg-kkm-navy text-kkm-gold font-bold rounded-lg text-sm shadow hover:bg-kkm-dark flex items-center gap-2">
+                <i class="fa-solid fa-check-circle"></i> REKOD PERTUKARAN RORO
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- RORO History Table -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-kkm-border">
+          <h4 class="text-sm font-bold text-kkm-navy mb-4 uppercase">Sejarah Rekod Pertukaran RORO Terkini</h4>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left border-collapse">
+              <thead>
+                <tr class="bg-kkm-navy text-white uppercase">
+                  <th class="p-3">ID Rekod</th>
+                  <th class="p-3">Tarikh</th>
+                  <th class="p-3">Masa Keluar/Masuk</th>
+                  <th class="p-3">Pemandu / Plat</th>
+                  <th class="p-3">Status</th>
+                  <th class="p-3">Bukti</th>
+                </tr>
+              </thead>
+              <tbody id="roro-history-table-body" class="divide-y divide-gray-200">
+                <tr><td colspan="6" class="text-center p-4 text-gray-400">Memuatkan sejarah pertukaran...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= KETIDAKPATUHAN (NC) MODULE ================= -->
+      <div id="section-ketidakpatuhan" class="hidden space-y-6">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-kkm-border">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-base font-bold text-kkm-navy">REKOD KETIDAKPATUHAN (NON-COMPLIANCE)</h3>
+            <button onclick="openNcModal()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg shadow flex items-center gap-2">
+              <i class="fa-solid fa-plus"></i> Lapor Ketidakpatuhan Baharu
+            </button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left border-collapse">
+              <thead>
+                <tr class="bg-kkm-navy text-white uppercase">
+                  <th class="p-3">NC ID</th>
+                  <th class="p-3">Tarikh</th>
+                  <th class="p-3">Kategori</th>
+                  <th class="p-3">Tahap</th>
+                  <th class="p-3">Perihal Penemuan</th>
+                  <th class="p-3">Status</th>
+                  <th class="p-3">Tindakan</th>
+                </tr>
+              </thead>
+              <tbody id="nc-table-body" class="divide-y divide-gray-200">
+                <tr><td colspan="7" class="text-center p-4 text-gray-400">Tiada rekod ketidakpatuhan.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= TINDAKAN PEMBETULAN (CAPA) MODULE ================= -->
+      <div id="section-capa" class="hidden space-y-6">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-kkm-border">
+          <h3 class="text-base font-bold text-kkm-navy border-b pb-3 mb-4">TINDAKAN PEMBETULAN & PENCEGAHAN (CAPA)</h3>
+          <p class="text-xs text-gray-500 mb-4">Modul ini menguruskan maklum balas dan penyelesaian bagi isu ketidakpatuhan yang dilaporkan.</p>
+          <div id="capa-cards-container" class="space-y-4">
+            <p class="text-xs text-gray-400 text-center py-6">Memuatkan data CAPA...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= LAPORAN PDF MODULE ================= -->
+      <div id="section-laporan" class="hidden space-y-6">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-kkm-border">
+          <h3 class="text-base font-bold text-kkm-navy border-b pb-3 mb-4">JANA LAPORAN RASMI (PDF & PRINT-READY)</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Laporan Harian -->
+            <div class="p-5 border border-kkm-border rounded-xl bg-gray-50 flex flex-col justify-between">
+              <div>
+                <h4 class="font-bold text-sm text-kkm-navy mb-1"><i class="fa-solid fa-file-pdf text-red-600 mr-2"></i> Laporan Pemantauan Harian</h4>
+                <p class="text-xs text-gray-500 mb-4">Menjana dokumen PDF rasmi pemantauan harian lengkap dengan bukti foto dan checklist.</p>
+                <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Pilih Tarikh Laporan</label>
+                <input type="date" id="lap-tarikh-harian" class="w-full px-3 py-2 bg-white rounded border text-sm mb-4">
+              </div>
+              <button onclick="generateDailyPdf()" class="w-full py-2.5 bg-kkm-navy text-kkm-gold font-bold text-xs rounded-lg hover:bg-kkm-dark shadow flex items-center justify-center gap-2">
+                <i class="fa-solid fa-download"></i> JANA PDF HARIAN
+              </button>
+            </div>
+
+            <!-- Laporan Bulanan -->
+            <div class="p-5 border border-kkm-border rounded-xl bg-gray-50 flex flex-col justify-between">
+              <div>
+                <h4 class="font-bold text-sm text-kkm-navy mb-1"><i class="fa-solid fa-file-pdf text-red-600 mr-2"></i> Laporan Ringkasan Bulanan</h4>
+                <p class="text-xs text-gray-500 mb-4">Menjana laporan eksekutif bulanan untuk pematuhan audit dan pengurusan hospital.</p>
+                <div class="grid grid-cols-2 gap-2 mb-4">
+                  <div>
+                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Bulan</label>
+                    <select id="lap-bulan" class="w-full px-3 py-2 bg-white rounded border text-sm">
+                      <option value="1">Januari</option><option value="2">Februari</option><option value="3">Mac</option>
+                      <option value="4">April</option><option value="5">Mei</option><option value="6">Jun</option>
+                      <option value="7">Julai</option><option value="8">Ogos</option><option value="9">September</option>
+                      <option value="10">Oktober</option><option value="11">November</option><option value="12">Disember</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Tahun</label>
+                    <input type="number" id="lap-tahun" value="2026" class="w-full px-3 py-2 bg-white rounded border text-sm">
+                  </div>
+                </div>
+              </div>
+              <button onclick="generateMonthlyPdf()" class="w-full py-2.5 bg-kkm-navy text-kkm-gold font-bold text-xs rounded-lg hover:bg-kkm-dark shadow flex items-center justify-center gap-2">
+                <i class="fa-solid fa-download"></i> JANA PDF BULANAN
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= AUDIT TRAIL MODULE ================= -->
+      <div id="section-audit" class="hidden space-y-6">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-kkm-border">
+          <h3 class="text-base font-bold text-kkm-navy border-b pb-3 mb-4">LOG AUDIT TRAIL SISTEM</h3>
+          <p class="text-xs text-gray-500 mb-4">Rekod transaksi dan tindakan rasmi yang tidak boleh diubah atau dipadam.</p>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left border-collapse">
+              <thead>
+                <tr class="bg-kkm-navy text-white uppercase">
+                  <th class="p-3">Audit ID</th>
+                  <th class="p-3">Timestamp</th>
+                  <th class="p-3">Pengguna</th>
+                  <th class="p-3">Tindakan</th>
+                  <th class="p-3">Modul</th>
+                  <th class="p-3">Butiran Rekod</th>
+                </tr>
+              </thead>
+              <tbody id="audit-table-body" class="divide-y divide-gray-200">
+                <tr><td colspan="6" class="text-center p-4 text-gray-400">Memuatkan log audit...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= PENGURUSAN PENGGUNA MODULE ================= -->
+      <div id="section-users" class="hidden space-y-6">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-kkm-border">
+          <div class="flex justify-between items-center border-b pb-3 mb-4">
+            <h3 class="text-base font-bold text-kkm-navy">SENARAI PENGGUNA SISTEM</h3>
+            <button onclick="openUserModal()" class="px-4 py-2 bg-kkm-navy text-kkm-gold font-bold text-xs rounded-lg shadow flex items-center gap-2">
+              <i class="fa-solid fa-user-plus"></i> Tambah Pengguna Baharu
+            </button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left border-collapse">
+              <thead>
+                <tr class="bg-kkm-navy text-white uppercase">
+                  <th class="p-3">ID Pengguna</th>
+                  <th class="p-3">Nama Pegawai</th>
+                  <th class="p-3">Jawatan</th>
+                  <th class="p-3">Peranan</th>
+                  <th class="p-3">Username</th>
+                  <th class="p-3">Status</th>
+                  <th class="p-3">Tindakan</th>
+                </tr>
+              </thead>
+              <tbody id="users-table-body" class="divide-y divide-gray-200">
+                <tr><td colspan="7" class="text-center p-4 text-gray-400">Memuatkan senarai pengguna...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= TETAPAN SISTEM MODULE ================= -->
+      <div id="section-settings" class="hidden max-w-2xl mx-auto space-y-6">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-kkm-border">
+          <h3 class="text-base font-bold text-kkm-navy border-b pb-3 mb-4">TETAPAN & KONFIGURASI SISTEM</h3>
+          <form onsubmit="saveSettings(event)" class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Nama Aplikasi</label>
+              <input type="text" id="set-app-name" class="w-full px-3 py-2 border rounded text-sm bg-gray-50" readonly>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Nama Hospital</label>
+              <input type="text" id="set-hospital-name" class="w-full px-3 py-2 border rounded text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Lokasi Rumah Sampah Utama</label>
+              <input type="text" id="set-location-name" class="w-full px-3 py-2 border rounded text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Zon Masa (Timezone)</label>
+              <input type="text" id="set-timezone" value="Asia/Kuala_Lumpur" class="w-full px-3 py-2 border rounded text-sm bg-gray-50" readonly>
+            </div>
+            <div class="pt-3 border-t flex justify-end">
+              <button type="submit" class="px-6 py-2.5 bg-kkm-navy text-kkm-gold font-bold text-xs rounded-lg shadow hover:bg-kkm-dark">
+                Simpan Tetapan
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- QR CODE MODAL -->
+  <div id="qr-modal" class="fixed inset-0 modal-overlay hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl">
+      <h3 class="font-bold text-kkm-navy text-base">QR CODE PREMIS RUMAH SAMPAH</h3>
+      <p class="text-xs text-gray-500">Imbas QR ini untuk terus membuka Borang Pemantauan Harian Rumah Sampah Hospital Kemaman.</p>
+      <div id="qrcode-container" class="flex justify-center p-4 bg-gray-50 rounded-xl border border-gray-200"></div>
+      <p class="text-[10px] font-mono text-gray-400">ID: RS-HKM-001</p>
+      <button onclick="closeQrModal()" class="w-full py-2 bg-gray-200 text-gray-700 font-bold text-xs rounded-lg hover:bg-gray-300">
+        Tutup
+      </button>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT CORE LOGIC -->
+  <script>
+    // 1. INITIALIZATION & AUTH
+    document.addEventListener("DOMContentLoaded", function() {
+      initApp();
+    });
+
+    function initApp() {
+      // Set Tarikh badges
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('current-date-badge').innerHTML = `<i class="fa-regular fa-calendar mr-1"></i> ${today}`;
+      document.getElementById('pm-tarikh').value = today;
+      document.getElementById('roro-tarikh').value = today;
+      document.getElementById('lap-tarikh-harian').value = today;
+
+      // Ambil Sesi Pengguna
+      const savedUser = localStorage.getItem('spkr_user');
+      if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+        updateUserUI();
+        switchModule('dashboard');
+      } else {
+        switchModule('login');
+      }
+    }
+
+    function handleLogin(e) {
+      e.preventDefault();
+      const userVal = document.getElementById('login-username').value;
+      const pinVal = document.getElementById('login-pin').value;
+
+      showLoading("Mengesahkan Log Masuk...");
+
+      callBackend("login", { username: userVal, pin: pinVal }, function(res) {
+        Swal.close();
+        if (res.success) {
+          currentUser = res.data;
+          localStorage.setItem('spkr_user', JSON.stringify(currentUser));
+          updateUserUI();
+          switchModule('dashboard');
+          Swal.fire({ icon: 'success', title: 'Selamat Datang', text: res.message, timer: 1500, showConfirmButton: false });
+        } else {
+          Swal.fire({ icon: 'error', title: 'Gagal Log Masuk', text: res.message });
+        }
+      });
+    }
+
+    function logout() {
+      Swal.fire({
+        title: 'Log Keluar?',
+        text: "Anda pasti untuk mengakhiri sesi ini?",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#1a2b4c',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya, Log Keluar'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          currentUser = null;
+          localStorage.removeItem('spkr_user');
+          switchModule('login');
+        }
+      });
+    }
+
+    function updateUserUI() {
+      if (!currentUser) return;
+      document.getElementById('user-display-name').innerText = currentUser.nama;
+      document.getElementById('user-display-role').innerText = currentUser.peranan;
+      document.getElementById('user-avatar-initial').innerText = currentUser.nama.charAt(0);
+
+      // Tunjukkan/Sembunyikan Menu Admin
+      const adminElems = document.querySelectorAll('.admin-only');
+      adminElems.forEach(el => {
+        if (currentUser.peranan === 'ADMIN') {
+          el.classList.remove('hidden');
+        } else {
+          el.classList.add('hidden');
+        }
+      });
+    }
+
+    // 2. NAVIGATION MODULE SWITCHING
+    function switchModule(moduleName) {
+      activeModule = moduleName;
+      const sections = ['login', 'dashboard', 'pemantauan', 'roro', 'ketidakpatuhan', 'capa', 'laporan', 'audit', 'users', 'settings'];
+      
+      sections.forEach(sec => {
+        const el = document.getElementById(`section-${sec}`);
+        if (el) el.classList.add('hidden');
+      });
+
+      const sidebar = document.getElementById('sidebar');
+      if (moduleName === 'login') {
+        sidebar.classList.add('hidden');
+        document.getElementById(`section-login`).classList.remove('hidden');
+        return;
+      }
+
+      sidebar.classList.remove('hidden');
+      document.getElementById(`section-${moduleName}`).classList.remove('hidden');
+
+      // Update Active Navigation Class
+      document.querySelectorAll('.sidebar-item').forEach(item => item.classList.remove('sidebar-active'));
+      const activeNav = document.getElementById(`nav-${moduleName}`);
+      if (activeNav) activeNav.classList.add('sidebar-active');
+
+      // Update Title Header
+      const titles = {
+        dashboard: '<i class="fa-solid fa-chart-line text-kkm-gold"></i> Dashboard Utama',
+        pemantauan: '<i class="fa-solid fa-clipboard-check text-kkm-gold"></i> Pemantauan Harian',
+        roro: '<i class="fa-solid fa-truck-ramp-box text-kkm-gold"></i> Pertukaran RORO',
+        ketidakpatuhan: '<i class="fa-solid fa-triangle-exclamation text-kkm-gold"></i> Ketidakpatuhan (NC)',
+        capa: '<i class="fa-solid fa-screwdriver-wrench text-kkm-gold"></i> Tindakan Pembetulan',
+        laporan: '<i class="fa-solid fa-file-pdf text-kkm-gold"></i> Laporan Rasmi PDF',
+        audit: '<i class="fa-solid fa-clock-rotate-left text-kkm-gold"></i> Audit Trail',
+        users: '<i class="fa-solid fa-users-gear text-kkm-gold"></i> Pengurusan Pengguna',
+        settings: '<i class="fa-solid fa-sliders text-kkm-gold"></i> Tetapan Sistem'
+      };
+      document.getElementById('module-title').innerHTML = titles[moduleName] || 'Sistem Pemantauan RORO';
+
+      // Load Data Khusus Modul
+      if (moduleName === 'dashboard') loadDashboardData();
+      if (moduleName === 'roro') loadRoroHistory();
+      if (moduleName === 'audit') loadAuditTrail();
+      if (moduleName === 'users') loadUsers();
+    }
+
+    // 3. BACKEND API CALLER
+    function callBackend(action, payload, callback) {
+      if (CONFIG.API_URL.indexOf("https://script.google.com/a/macros/moh.gov.my/s/AKfycbxIl09KolzoDNIL0-5qJvepElzs8iggGHlrs9MDQxI7zsXoS6AuI7etQpvpOyfl3bde/exec") !== -1) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Konfigurasi URL Web App Dikehendaki',
+          text: 'Sila masukkan URL Web App Google Apps Script anda ke dalam CONFIG.API_URL pada bahagian atas index.html.'
+        });
+        if (callback) callback({ success: false, message: "URL API tidak dikonfigurasi." });
+        return;
+      }
+
+      payload.action = action;
+      payload.userInfo = currentUser;
+
+      fetch(CONFIG.API_URL, {
+        method: 'POST',
+        mode: 'cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (callback) callback(data);
+      })
+      .catch(err => {
+        console.error("API Error:", err);
+        if (callback) callback({ success: false, message: "Gagal berkomunikasi dengan server backend.", error: err.toString() });
+      });
+    }
+
+    // 4. DATA LOADERS & SUBMISSIONS
+    function loadDashboardData() {
+      callBackend("getDashboard", {}, function(res) {
+        if (res.success && res.data) {
+          const d = res.data;
+          // Pemantauan Status
+          if (d.todayMonitoring) {
+            document.getElementById('dash-status-pemantauan').innerHTML = `<span class="text-emerald-600">🟢 Lengkap ${d.todayMonitoring.isLateRecord ? '(Rekod Lewat)' : ''}</span>`;
+            document.getElementById('dash-penyelia-oncall').innerText = `Penyelia: ${d.todayMonitoring.penyelia}`;
+            document.getElementById('dash-status-rs').innerText = d.todayMonitoring.statusRumahSampah;
+          } else {
+            document.getElementById('dash-status-pemantauan').innerHTML = `<span class="text-red-600">🔴 Belum Lengkap</span>`;
+            document.getElementById('dash-status-rs').innerText = "Belum Dipantau Hari Ini";
+          }
+
+          // RORO Status
+          if (d.todayRoro) {
+            document.getElementById('dash-status-roro').innerHTML = `<span class="text-emerald-600">🟢 ${d.todayRoro.statusPertukaran}</span>`;
+            document.getElementById('dash-roro-time').innerText = `Masa Keluar: ${d.todayRoro.masaKeluar}`;
+          } else {
+            document.getElementById('dash-status-roro').innerHTML = `<span class="text-amber-600">🟠 Belum Ditukar Hari Ini</span>`;
+          }
+
+          // Stats
+          document.getElementById('stat-monitored-days').innerText = `${d.stats.monitoredDays}/${d.stats.totalDays}`;
+          document.getElementById('stat-compliance-rate').innerText = `${d.stats.complianceRate}%`;
+          document.getElementById('stat-roro-exchanges').innerText = `${d.stats.roroExchanges}`;
+          document.getElementById('stat-nc-capa').innerText = `${d.stats.totalNC} / ${d.stats.openCAPA}`;
+        }
+      });
+    }
+
+    function submitDailyMonitoring(e) {
+      e.preventDefault();
+      showLoading("Menyimpan Rekod Pemantauan...");
+
+      const fileInput = document.getElementById('pm-foto-input');
+      const data = {
+        tarikh: document.getElementById('pm-tarikh').value,
+        masa: document.getElementById('pm-masa').value,
+        shift: document.getElementById('pm-shift').value,
+        rumahSampahBersih: document.getElementById('chk-rs-bersih').checked,
+        tiadaSampahBerserak: document.getElementById('chk-tiada-berserak').checked,
+        tiadaTumpahan: document.getElementById('chk-tiada-tumpahan').checked,
+        tiadaBauLuarBiasa: document.getElementById('chk-tiada-bau').checked,
+        laluanTidakTerhalang: document.getElementById('chk-laluan-lapang').checked,
+        kawasanLuarBersih: document.getElementById('chk-luar-bersih').checked,
+        roroDiLokasi: document.getElementById('chk-roro-ada').checked,
+        keadaanRoro: document.getElementById('chk-roro-elok').checked,
+        statusRumahSampah: document.getElementById('pm-status-rs').value,
+        tahapRoro: document.getElementById('pm-tahap-roro').value,
+        catatan: document.getElementById('pm-catatan').value
+      };
+
+      if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          const base64 = evt.target.result;
+          callBackend("uploadPhoto", { base64Data: base64, fileName: file.name, jenisFoto: "BUKTI_PEMANTAUAN" }, function(photoRes) {
+            if (photoRes.success) {
+              data.buktiFotoUrl = photoRes.data.fileUrl;
+            }
+            sendMonitoringBackend(data);
+          });
+        };
+        reader.readAsDataURL(file);
+      } else {
+        sendMonitoringBackend(data);
+      }
+    }
+
+    function sendMonitoringBackend(data) {
+      callBackend("saveDailyMonitoring", { data: data }, function(res) {
+        Swal.close();
+        if (res.success) {
+          Swal.fire({ icon: 'success', title: 'Berjaya', text: res.message }).then(() => {
+            switchModule('dashboard');
+          });
+        } else {
+          Swal.fire({ icon: 'error', title: 'Ralat Simpan', text: res.message });
+        }
+      });
+    }
+
+    function submitRoroExchange(e) {
+      e.preventDefault();
+      showLoading("Menyimpan Pertukaran RORO...");
+
+      const data = {
+        tarikh: document.getElementById('roro-tarikh').value,
+        statusPertukaran: document.getElementById('roro-status').value,
+        masaKeluar: document.getElementById('roro-masa-keluar').value,
+        masaMasuk: document.getElementById('roro-masa-masuk').value,
+        namaPemandu: document.getElementById('roro-pemandu').value,
+        noKenderaan: document.getElementById('roro-noplat').value,
+        namaKontraktor: document.getElementById('roro-kontraktor').value
+      };
+
+      callBackend("saveRoroExchange", { data: data }, function(res) {
+        Swal.close();
+        if (res.success) {
+          Swal.fire({ icon: 'success', title: 'Berjaya', text: res.message });
+          loadRoroHistory();
+        } else {
+          Swal.fire({ icon: 'error', title: 'Gagal', text: res.message });
+        }
+      });
+    }
+
+    function loadRoroHistory() {
+      callBackend("getRoroExchangeHistory", { limit: 10 }, function(res) {
+        if (res.success && res.data) {
+          const tbody = document.getElementById('roro-history-table-body');
+          if (res.data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center p-4 text-gray-400">Tiada rekod pertukaran ditemui.</td></tr>`;
+            return;
+          }
+          let html = '';
+          res.data.forEach(r => {
+            html += `<tr>
+              <td class="p-3 font-mono font-bold">${r.pertukaranId}</td>
+              <td class="p-3">${r.tarikh}</td>
+              <td class="p-3">${r.masaKeluar} / ${r.masaMasuk}</td>
+              <td class="p-3">${r.pemandu} (${r.noPlat})</td>
+              <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">${r.status}</span></td>
+              <td class="p-3">${r.buktiUrl ? `<a href="${r.buktiUrl}" target="_blank" class="text-blue-600 underline">Lihat Foto</a>` : '-'}</td>
+            </tr>`;
+          });
+          tbody.innerHTML = html;
+        }
+      });
+    }
+
+    function generateDailyPdf() {
+      const dateVal = document.getElementById('lap-tarikh-harian').value;
+      showLoading("Menjana Laporan PDF Harian...");
+      callBackend("generateDailyReport", { date: dateVal }, function(res) {
+        Swal.close();
+        if (res.success && res.data.pdfUrl) {
+          window.open(res.data.pdfUrl, '_blank');
+        } else {
+          Swal.fire({ icon: 'error', title: 'Gagal Jana PDF', text: res.message });
+        }
+      });
+    }
+
+    function generateMonthlyPdf() {
+      const monthVal = document.getElementById('lap-bulan').value;
+      const yearVal = document.getElementById('lap-tahun').value;
+      showLoading("Menjana Laporan PDF Bulanan...");
+      callBackend("generateMonthlyReport", { month: monthVal, year: yearVal }, function(res) {
+        Swal.close();
+        if (res.success && res.data.pdfUrl) {
+          window.open(res.data.pdfUrl, '_blank');
+        } else {
+          Swal.fire({ icon: 'error', title: 'Gagal Jana PDF', text: res.message });
+        }
+      });
+    }
+
+    function loadAuditTrail() {
+      callBackend("getAuditTrail", { limit: 50 }, function(res) {
+        if (res.success && res.data) {
+          const tbody = document.getElementById('audit-table-body');
+          let html = '';
+          res.data.forEach(a => {
+            html += `<tr>
+              <td class="p-3 font-mono text-[10px]">${a.auditId}</td>
+              <td class="p-3 text-gray-500">${a.timestamp}</td>
+              <td class="p-3 font-semibold">${a.userName} (${a.role})</td>
+              <td class="p-3 font-bold text-kkm-navy">${a.action}</td>
+              <td class="p-3">${a.module}</td>
+              <td class="p-3 text-gray-600">${a.details}</td>
+            </tr>`;
+          });
+          tbody.innerHTML = html;
+        }
+      });
+    }
+
+    function loadUsers() {
+      callBackend("getUsers", {}, function(res) {
+        if (res.success && res.data) {
+          const tbody = document.getElementById('users-table-body');
+          let html = '';
+          res.data.forEach(u => {
+            html += `<tr>
+              <td class="p-3 font-mono font-bold">${u.userId}</td>
+              <td class="p-3 font-semibold">${u.nama}</td>
+              <td class="p-3">${u.jawatan}</td>
+              <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800">${u.peranan}</span></td>
+              <td class="p-3">${u.username}</td>
+              <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${u.status === 'AKTIF' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}">${u.status}</span></td>
+              <td class="p-3">-</td>
+            </tr>`;
+          });
+          tbody.innerHTML = html;
+        }
+      });
+    }
+
+    // UTILITIES & MODALS
+    function showLoading(msg) {
+      Swal.fire({
+        title: msg || 'Sila Tunggu...',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+      });
+    }
+
+    function toggleMobileSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      sidebar.classList.toggle('hidden');
+    }
+
+    function openQrModal() {
+      document.getElementById('qr-modal').classList.remove('hidden');
+      const container = document.getElementById('qrcode-container');
+      container.innerHTML = '';
+      new QRCode(container, {
+        text: window.location.href.split('?')[0] + "?location=RS-HKM-001",
+        width: 160,
+        height: 160
+      });
+    }
+
+    function closeQrModal() {
+      document.getElementById('qr-modal').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>

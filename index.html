@@ -45,7 +45,7 @@
   <script>
     const CONFIG = {
       // MASUKKAN URL WEB APP APPS SCRIPT ANDA DI SINI
-      API_URL: "https://script.google.com/macros/s/YOUR_APPS_SCRIPT_DEPLOYMENT_ID/exec",
+      API_URL: "https://script.google.com/a/macros/moh.gov.my/s/AKfycbxIl09KolzoDNIL0-5qJvepElzs8iggGHlrs9MDQxI7zsXoS6AuI7etQpvpOyfl3bde/exec",
       APP_NAME: "Sistem Pemantauan RORO & Rumah Sampah Hospital Kemaman",
       VERSION: "1.0.0",
       LOCATION_ID: "RS-HKM-001"
@@ -777,7 +777,7 @@
 
     // 3. BACKEND API CALLER
     function callBackend(action, payload, callback) {
-      if (CONFIG.API_URL.indexOf("https://script.google.com/a/macros/moh.gov.my/s/AKfycbxIl09KolzoDNIL0-5qJvepElzs8iggGHlrs9MDQxI7zsXoS6AuI7etQpvpOyfl3bde/exec") !== -1) {
+      if (CONFIG.API_URL.indexOf("YOUR_APPS_SCRIPT_DEPLOYMENT_ID") !== -1) {
         Swal.fire({
           icon: 'warning',
           title: 'Konfigurasi URL Web App Dikehendaki',

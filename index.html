@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>e-RORO | Sistem Pemantauan RORO Hospital Kemaman</title>
+  <title>e-RORO | Unit Penyeliaan Hospital Kemaman</title>
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -67,6 +67,60 @@
       from { opacity: 0; transform: translateY(6px); }
       to { opacity: 1; transform: translateY(0); }
     }
+
+    /* =====================================================================
+       GAYA CETAKAN RASMI PDF (@media print)
+       ===================================================================== */
+    @media print {
+      @page {
+        size: A4 landscape;
+        margin: 12mm;
+      }
+      body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        font-size: 11px !important;
+      }
+      .no-print,
+      #sidebar,
+      #mobileBackdrop,
+      header,
+      #toast,
+      #detailModal {
+        display: none !important;
+      }
+      main {
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+        width: 100% !important;
+      }
+      #view-laporan {
+        display: block !important;
+      }
+      #printableReportArea {
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+      }
+      table {
+        page-break-inside: auto;
+        border-collapse: collapse !important;
+        width: 100% !important;
+      }
+      tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+      }
+      thead {
+        display: table-header-group;
+      }
+      .signature-block {
+        page-break-inside: avoid;
+      }
+    }
   </style>
 </head>
 <body class="antialiased overflow-x-hidden">
@@ -75,16 +129,16 @@
   <!-- KONFIGURASI UTAMA: MASUKKAN URL WEB APP GOOGLE APPS SCRIPT ANDA DI SINI -->
   <!-- ===================================================================== -->
   <script>
-    const DEFAULT_WEB_APP_URL = "https://script.google.com/a/macros/moh.gov.my/s/AKfycbykFBBQkqqAjq-W6BIt95F0vhTGeyzMsVlDKfM1ZXV6_O0fBjiBcrZmJdstGzLUOmDyRQ/exec";
+    const WEB_APP_URL = "https://script.google.com/a/macros/moh.gov.my/s/AKfycbykFBBQkqqAjq-W6BIt95F0vhTGeyzMsVlDKfM1ZXV6_O0fBjiBcrZmJdstGzLUOmDyRQ/exec";
   </script>
 
   <div class="min-h-screen flex bg-slate-100">
     
     <!-- Mobile Backdrop -->
-    <div id="mobileBackdrop" onclick="toggleMobileSidebar()" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-30 hidden lg:hidden"></div>
+    <div id="mobileBackdrop" onclick="toggleMobileSidebar()" class="no-print fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-30 hidden lg:hidden"></div>
 
     <!-- SIDEBAR INTERAKTIF -->
-    <aside id="sidebar" class="sidebar sidebar-expanded fixed lg:sticky top-0 left-0 z-40 h-screen bg-slate-900 text-slate-200 flex flex-col justify-between shadow-2xl -translate-x-full lg:translate-x-0 select-none">
+    <aside id="sidebar" class="no-print sidebar sidebar-expanded fixed lg:sticky top-0 left-0 z-40 h-screen bg-slate-900 text-slate-200 flex flex-col justify-between shadow-2xl -translate-x-full lg:translate-x-0 select-none">
       
       <!-- Top Brand & Collapse Toggle -->
       <div>
@@ -109,7 +163,7 @@
 
         <!-- Navigation Menu -->
         <nav class="p-3 space-y-1.5 mt-2">
-          <button onclick="switchView('dashboard')" data-nav="dashboard" class="nav-item active-nav w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-sm font-semibold transition-all bg-teal-600 text-white shadow-md shadow-teal-600/25">
+          <button onclick="switchView('dashboard')" data-nav="dashboard" class="nav-item w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-sm font-semibold transition-all bg-teal-600 text-white shadow-md shadow-teal-600/25">
             <div class="flex items-center gap-3">
               <i data-lucide="layout-dashboard" class="w-5 h-5 shrink-0"></i>
               <span class="nav-label">Papan Pemuka</span>
@@ -132,34 +186,32 @@
             <span id="sidebarRecordCount" class="nav-badge text-xs font-bold bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full">0</span>
           </button>
 
+          <button onclick="switchView('laporan')" data-nav="laporan" class="nav-item w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800/80 hover:text-white transition-all">
+            <div class="flex items-center gap-3">
+              <i data-lucide="file-text" class="w-5 h-5 shrink-0"></i>
+              <span class="nav-label">Laporan Bulanan</span>
+            </div>
+            <span class="nav-badge text-[10px] font-bold bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full">PDF</span>
+          </button>
+
           <button onclick="switchView('log')" data-nav="log" class="nav-item w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800/80 hover:text-white transition-all">
             <div class="flex items-center gap-3">
               <i data-lucide="history" class="w-5 h-5 shrink-0"></i>
               <span class="nav-label">Log Sistem</span>
             </div>
           </button>
-
-          <div class="pt-3 mt-3 border-t border-slate-800/80">
-            <button onclick="switchView('tetapan')" data-nav="tetapan" class="nav-item w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800/80 hover:text-white transition-all">
-              <div class="flex items-center gap-3">
-                <i data-lucide="settings" class="w-5 h-5 shrink-0"></i>
-                <span class="nav-label">Tetapan Web App</span>
-              </div>
-              <span id="apiStatusDot" class="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0" title="Status Sambungan API"></span>
-            </button>
-          </div>
         </nav>
       </div>
 
-      <!-- Bottom Status Card -->
+      <!-- Bottom Unit Card -->
       <div class="p-3 border-t border-slate-800/80">
         <div class="bg-slate-800/70 rounded-xl p-3 flex items-center gap-3">
           <div class="w-9 h-9 rounded-lg bg-slate-700 flex items-center justify-center text-teal-400 shrink-0">
-            <i data-lucide="shield-check" class="w-5 h-5"></i>
+            <i data-lucide="building-2" class="w-5 h-5"></i>
           </div>
           <div class="sidebar-footer-text overflow-hidden">
-            <p class="text-xs font-semibold text-white truncate">Unit Kesihatan Persekitaran</p>
-            <p id="connectionLabel" class="text-[11px] text-amber-400 truncate">Menunggu sambungan...</p>
+            <p class="text-xs font-bold text-white leading-snug">Unit Penyeliaan Hospital Kemaman</p>
+            <p id="connectionLabel" class="text-[11px] text-emerald-400 truncate mt-0.5">Sistem Aktif</p>
           </div>
         </div>
       </div>
@@ -169,14 +221,14 @@
     <div class="flex-1 flex flex-col min-w-0">
       
       <!-- Top Header Bar -->
-      <header class="sticky top-0 z-20 h-20 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-8 flex items-center justify-between">
+      <header class="no-print sticky top-0 z-20 h-20 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-8 flex items-center justify-between">
         <div class="flex items-center gap-3">
           <button onclick="toggleMobileSidebar()" class="lg:hidden p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700">
             <i data-lucide="menu" class="w-5 h-5"></i>
           </button>
           <div>
             <h1 id="pageTitle" class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">Papan Pemuka Pemantauan</h1>
-            <p id="pageSubtitle" class="text-xs text-slate-500 hidden sm:block">Sistem Pemantauan Tong RORO & Kebersihan Rumah Sampah Hospital Kemaman</p>
+            <p id="pageSubtitle" class="text-xs text-slate-500 hidden sm:block">Unit Penyeliaan Hospital Kemaman • Sistem Pemantauan Tong RORO</p>
           </div>
         </div>
 
@@ -191,17 +243,6 @@
           </button>
         </div>
       </header>
-
-      <!-- Alert Banner if URL not configured -->
-      <div id="setupBanner" class="hidden bg-amber-50 border-b border-amber-200 px-4 sm:px-8 py-3 flex flex-wrap items-center justify-between gap-2">
-        <div class="flex items-center gap-2.5 text-amber-800 text-xs sm:text-sm font-medium">
-          <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-600 shrink-0"></i>
-          <span>URL Web App Google Apps Script belum ditetapkan. Sila masukkan URL anda untuk menyambung ke Google Sheet.</span>
-        </div>
-        <button onclick="switchView('tetapan')" class="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition">
-          Tetapkan Sekarang
-        </button>
-      </div>
 
       <!-- Content Container -->
       <main class="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto space-y-6">
@@ -316,7 +357,7 @@
               <div>
                 <span id="formModeBadge" class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-teal-500/20 text-teal-300 border border-teal-400/30">Mod Rekod Baharu</span>
                 <h2 id="formHeading" class="text-lg font-extrabold mt-1">Borang Pemantauan Harian Tong RORO</h2>
-                <p class="text-xs text-slate-300">Lengkapkan maklumat pemeriksaan fizikal dan kebersihan kawasan RORO</p>
+                <p class="text-xs text-slate-300">Unit Penyeliaan Hospital Kemaman</p>
               </div>
               <button type="button" onclick="resetForm()" class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-semibold transition">
                 Set Semula
@@ -534,7 +575,161 @@
           </div>
         </section>
 
-        <!-- ==================== 4. VIEW: LOG SISTEM ==================== -->
+        <!-- ==================== 4. VIEW: LAPORAN BULANAN & CETAK PDF ==================== -->
+        <section id="view-laporan" class="view-section hidden space-y-5">
+          
+          <!-- Bar Kawalan Bulan & Cetak (Disembunyikan semasa print) -->
+          <div class="no-print bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div class="flex flex-wrap items-center gap-3">
+              <div>
+                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Pilih Bulan</label>
+                <select id="reportMonth" onchange="renderMonthlyReport()" class="px-3.5 py-2 rounded-xl border border-slate-300 text-sm font-bold bg-white text-slate-800 focus:ring-2 focus:ring-teal-500 outline-none">
+                  <option value="01">Januari (01)</option>
+                  <option value="02">Februari (02)</option>
+                  <option value="03">Mac (03)</option>
+                  <option value="04">April (04)</option>
+                  <option value="05">Mei (05)</option>
+                  <option value="06">Jun (06)</option>
+                  <option value="07">Julai (07)</option>
+                  <option value="08">Ogos (08)</option>
+                  <option value="09">September (09)</option>
+                  <option value="10">Oktober (10)</option>
+                  <option value="11">November (11)</option>
+                  <option value="12">Disember (12)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Pilih Tahun</label>
+                <select id="reportYear" onchange="renderMonthlyReport()" class="px-3.5 py-2 rounded-xl border border-slate-300 text-sm font-bold bg-white text-slate-800 focus:ring-2 focus:ring-teal-500 outline-none">
+                  <option value="2025">2025</option>
+                  <option value="2026" selected>2026</option>
+                  <option value="2027">2027</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Nama Ketua Penyelia Hospital (Opsional)</label>
+                <input type="text" id="reportKetuaName" onkeyup="updateSignatureNames()" placeholder="Taip nama jika perlu..." class="px-3.5 py-2 rounded-xl border border-slate-300 text-sm bg-white text-slate-800 focus:ring-2 focus:ring-teal-500 outline-none uppercase" />
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Nama Pengarah Hospital (Opsional)</label>
+                <input type="text" id="reportPengarahName" onkeyup="updateSignatureNames()" placeholder="Taip nama jika perlu..." class="px-3.5 py-2 rounded-xl border border-slate-300 text-sm bg-white text-slate-800 focus:ring-2 focus:ring-teal-500 outline-none uppercase" />
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 self-end lg:self-center">
+              <button onclick="window.print()" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-md shadow-teal-600/25 transition">
+                <i data-lucide="printer" class="w-4 h-4"></i>
+                <span>Cetak / Simpan PDF</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- KERTAS LAPORAN RASMI (UNTUK CETAKAN PDF A4) -->
+          <div id="printableReportArea" class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 sm:p-10 space-y-6">
+            
+            <!-- Kepala Surat Rasmi -->
+            <div class="border-b-2 border-slate-900 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <p class="text-xs font-bold uppercase tracking-widest text-slate-500">Kementerian Kesihatan Malaysia</p>
+                <h2 class="text-xl font-extrabold uppercase text-slate-900 tracking-tight mt-0.5">Hospital Kemaman, Terengganu</h2>
+                <p class="text-sm font-bold text-teal-700">Unit Penyeliaan Hospital Kemaman</p>
+              </div>
+              <div class="sm:text-right">
+                <span class="inline-block px-3 py-1 rounded bg-slate-900 text-white text-xs font-bold uppercase tracking-wider">Laporan Bulanan e-RORO</span>
+                <p id="repDateRangeText" class="text-xs font-bold text-slate-800 mt-1.5">Tempoh: 01/07/2026 hingga 31/07/2026</p>
+                <p id="repGeneratedAt" class="text-[11px] text-slate-500">Tarikh Dijana: -</p>
+              </div>
+            </div>
+
+            <!-- Tajuk Laporan -->
+            <div class="text-center">
+              <h3 id="repMainHeading" class="text-base font-extrabold uppercase underline text-slate-900">
+                LAPORAN PEMANTAUAN HARIAN TONG RORO & KEBERSIHAN RUMAH SAMPAH BAGI BULAN JULAI 2026
+              </h3>
+            </div>
+
+            <!-- Kotak Ringkasan Prestasi Bulanan -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div class="border border-slate-300 rounded-lg p-3 bg-slate-50/60">
+                <span class="text-[10px] font-bold uppercase text-slate-500 block">Jumlah Pemeriksaan</span>
+                <strong id="repStatTotal" class="text-lg font-extrabold text-slate-900">0 Kali</strong>
+              </div>
+              <div class="border border-slate-300 rounded-lg p-3 bg-slate-50/60">
+                <span class="text-[10px] font-bold uppercase text-slate-500 block">Anggaran Berat Sisa</span>
+                <strong id="repStatBerat" class="text-lg font-extrabold text-slate-900">0.0 Tan</strong>
+              </div>
+              <div class="border border-slate-300 rounded-lg p-3 bg-slate-50/60">
+                <span class="text-[10px] font-bold uppercase text-slate-500 block">Status Memuaskan</span>
+                <strong id="repStatMemuaskan" class="text-lg font-extrabold text-emerald-700">0 (0%)</strong>
+              </div>
+              <div class="border border-slate-300 rounded-lg p-3 bg-slate-50/60">
+                <span class="text-[10px] font-bold uppercase text-slate-500 block">Kurang Memuaskan</span>
+                <strong id="repStatKurang" class="text-lg font-extrabold text-rose-700">0 Rekod</strong>
+              </div>
+            </div>
+
+            <!-- Jadual Rekod Bulanan (1 haribulan hingga hujung bulan) -->
+            <div class="overflow-x-auto">
+              <table class="w-full border-collapse border border-slate-400 text-[11px]">
+                <thead>
+                  <tr class="bg-slate-100 text-slate-900 font-bold uppercase text-center">
+                    <th class="border border-slate-400 py-2 px-2 w-8">Bil</th>
+                    <th class="border border-slate-400 py-2 px-2">Tarikh & Masa</th>
+                    <th class="border border-slate-400 py-2 px-2">ID Rekod</th>
+                    <th class="border border-slate-400 py-2 px-2">Nama Penyelia / Pemantau</th>
+                    <th class="border border-slate-400 py-2 px-2">Konsesi</th>
+                    <th class="border border-slate-400 py-2 px-2">Berat (Tan)</th>
+                    <th class="border border-slate-400 py-2 px-2">Status Tong</th>
+                    <th class="border border-slate-400 py-2 px-1.5" title="Audit Lantai">Lantai</th>
+                    <th class="border border-slate-400 py-2 px-1.5" title="Audit Vektor">Vektor</th>
+                    <th class="border border-slate-400 py-2 px-1.5" title="Audit Bau">Bau</th>
+                    <th class="border border-slate-400 py-2 px-1.5" title="Audit Fizikal">Fizikal</th>
+                    <th class="border border-slate-400 py-2 px-2">Status Kebersihan</th>
+                    <th class="border border-slate-400 py-2 px-2">Catatan & Tindakan</th>
+                  </tr>
+                </thead>
+                <tbody id="reportTableBody">
+                  <tr><td colspan="13" class="border border-slate-400 py-8 text-center text-slate-500">Tiada rekod pemantauan bagi bulan yang dipilih.</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Ruangan Tandatangan Rasmi (Ketua Penyelia Hospital & Pengarah Hospital Kemaman) -->
+            <div class="signature-block pt-10 mt-8 grid grid-cols-1 sm:grid-cols-2 gap-12 text-xs text-slate-900">
+              
+              <!-- Kiri: Disediakan / Disemak oleh Ketua Penyelia Hospital -->
+              <div class="space-y-1">
+                <p class="font-semibold">Disediakan &amp; Disemak oleh:</p>
+                <div class="h-20"></div>
+                <div class="border-b border-dotted border-slate-800 w-72"></div>
+                <p id="sigKetuaNameDisplay" class="font-extrabold uppercase pt-1">( NAMA &amp; COP RASMI )</p>
+                <p class="font-bold">Ketua Penyelia Hospital</p>
+                <p>Unit Penyeliaan Hospital Kemaman</p>
+                <p>Hospital Kemaman, Terengganu</p>
+                <p class="pt-1 text-slate-600">Tarikh: ............................................</p>
+              </div>
+
+              <!-- Kanan: Disahkan oleh Pengarah Hospital Kemaman -->
+              <div class="space-y-1">
+                <p class="font-semibold">Disahkan oleh:</p>
+                <div class="h-20"></div>
+                <div class="border-b border-dotted border-slate-800 w-72"></div>
+                <p id="sigPengarahNameDisplay" class="font-extrabold uppercase pt-1">( NAMA &amp; COP RASMI )</p>
+                <p class="font-bold">Pengarah Hospital Kemaman</p>
+                <p>Hospital Kemaman</p>
+                <p>24000 Chukai, Kemaman, Terengganu</p>
+                <p class="pt-1 text-slate-600">Tarikh: ............................................</p>
+              </div>
+
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ==================== 5. VIEW: LOG SISTEM ==================== -->
         <section id="view-log" class="view-section hidden space-y-4">
           <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
@@ -564,56 +759,12 @@
           </div>
         </section>
 
-        <!-- ==================== 5. VIEW: TETAPAN WEB APP ==================== -->
-        <section id="view-tetapan" class="view-section hidden">
-          <div class="max-w-2xl mx-auto bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-5">
-            <div class="flex items-center gap-3">
-              <div class="w-11 h-11 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center">
-                <i data-lucide="link" class="w-6 h-6"></i>
-              </div>
-              <div>
-                <h2 class="text-lg font-extrabold text-slate-900">Sambungan Google Apps Script Web App</h2>
-                <p class="text-xs text-slate-500">Hubungkan antaramuka GitHub ini dengan Google Sheet e-RORO Hospital Kemaman</p>
-              </div>
-            </div>
-
-            <div class="space-y-4 pt-2">
-              <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1.5">URL Web App (berakhir dengan /exec) *</label>
-                <input type="url" id="settingWebAppUrl" placeholder="https://script.google.com/macros/s/AKfycb.../exec" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-mono focus:ring-2 focus:ring-teal-500 outline-none" />
-              </div>
-
-              <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1.5">Identiti / E-mel Pengguna Semasa (Untuk Rekod Log Sistem)</label>
-                <input type="text" id="settingUserEmail" placeholder="Contoh: nama@moh.gov.my atau Pengguna GitHub" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-teal-500 outline-none" />
-              </div>
-
-              <div class="bg-slate-50 rounded-xl p-4 border border-slate-200/80 text-xs text-slate-600 space-y-1.5">
-                <p class="font-bold text-slate-800">Panduan Deployment Google Apps Script:</p>
-                <ol class="list-decimal list-inside space-y-1">
-                  <li>Buka Google Sheet &gt; <b>Extensions</b> &gt; <b>Apps Script</b>.</li>
-                  <li>Tampal kod <code>Code.gs</code> dan klik <b>Deploy &gt; New deployment</b>.</li>
-                  <li>Pilih jenis <b>Web app</b>, setkan <i>Execute as:</i> <b>Me</b> dan <i>Who has access:</i> <b>Anyone</b>.</li>
-                  <li>Salin URL Web App yang dijana dan tampal di ruang di atas.</li>
-                </ol>
-              </div>
-
-              <div class="flex items-center justify-end gap-3 pt-2">
-                <button onclick="saveSettings()" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-sm transition">
-                  <i data-lucide="check-circle" class="w-4 h-4"></i>
-                  <span>Simpan & Sambung Sekarang</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
-
       </main>
     </div>
   </div>
 
   <!-- MODAL PERINCIAN REKOD -->
-  <div id="detailModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+  <div id="detailModal" class="no-print fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden animate-[fadeIn_0.2s_ease-out]">
       <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
         <div>
@@ -632,7 +783,7 @@
   </div>
 
   <!-- TOAST NOTIFICATION -->
-  <div id="toast" class="fixed bottom-5 right-5 z-50 hidden items-center gap-3 px-4 py-3 rounded-xl shadow-xl text-white text-xs font-bold transition-all">
+  <div id="toast" class="no-print fixed bottom-5 right-5 z-50 hidden items-center gap-3 px-4 py-3 rounded-xl shadow-xl text-white text-xs font-bold transition-all">
     <i id="toastIcon" data-lucide="info" class="w-4 h-4"></i>
     <span id="toastMsg">Mesej sistem</span>
   </div>
@@ -644,73 +795,32 @@
     let appState = {
       rekod: [],
       logs: [],
-      webAppUrl: '',
-      userEmail: 'Pengguna Web App',
       auditChartInstance: null,
       statusTongChartInstance: null
     };
 
+    const NAMA_BULAN = {
+      '01': 'JANUARI', '02': 'FEBRUARI', '03': 'MAC', '04': 'APRIL',
+      '05': 'MEI', '06': 'JUN', '07': 'JULAI', '08': 'OGOS',
+      '09': 'SEPTEMBER', '10': 'OKTOBER', '11': 'NOVEMBER', '12': 'DISEMBER'
+    };
+
     document.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
-      initSettings();
+      initDefaultReportPeriod();
       loadAllData();
     });
 
-    function initSettings() {
-      const savedUrl = localStorage.getItem('eroro_webapp_url');
-      const savedUser = localStorage.getItem('eroro_user_email');
-
-      if (savedUrl && savedUrl.startsWith('http')) {
-        appState.webAppUrl = savedUrl;
-      } else if (DEFAULT_WEB_APP_URL && DEFAULT_WEB_APP_URL.startsWith('http')) {
-        appState.webAppUrl = DEFAULT_WEB_APP_URL;
+    function initDefaultReportPeriod() {
+      const now = new Date();
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const yyyy = String(now.getFullYear());
+      document.getElementById('reportMonth').value = mm;
+      const yearSel = document.getElementById('reportYear');
+      if ([...yearSel.options].some(o => o.value === yyyy)) {
+        yearSel.value = yyyy;
       }
-
-      if (savedUser) {
-        appState.userEmail = savedUser;
-      }
-
-      document.getElementById('settingWebAppUrl').value = appState.webAppUrl;
-      document.getElementById('settingUserEmail').value = appState.userEmail;
-      updateConnectionUI();
-    }
-
-    function saveSettings() {
-      const url = document.getElementById('settingWebAppUrl').value.trim();
-      const user = document.getElementById('settingUserEmail').value.trim() || 'Pengguna Web App';
-
-      if (!url || !url.startsWith('https://script.google.com/')) {
-        showToast('Sila masukkan URL Google Apps Script yang sah (https://script.google.com/...)', 'error');
-        return;
-      }
-
-      appState.webAppUrl = url;
-      appState.userEmail = user;
-      localStorage.setItem('eroro_webapp_url', url);
-      localStorage.setItem('eroro_user_email', user);
-
-      updateConnectionUI();
-      showToast('Tetapan Web App berjaya disimpan!', 'success');
-      switchView('dashboard');
-      loadAllData();
-    }
-
-    function updateConnectionUI() {
-      const banner = document.getElementById('setupBanner');
-      const dot = document.getElementById('apiStatusDot');
-      const label = document.getElementById('connectionLabel');
-
-      if (appState.webAppUrl && appState.webAppUrl.startsWith('http')) {
-        banner.classList.add('hidden');
-        dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0';
-        label.textContent = 'Terhubung ke Google Sheet';
-        label.className = 'text-[11px] text-emerald-400 truncate';
-      } else {
-        banner.classList.remove('hidden');
-        dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0';
-        label.textContent = 'URL Web App belum diset';
-        label.className = 'text-[11px] text-amber-400 truncate';
-      }
+      renderMonthlyReport();
     }
 
     // =========================================================================
@@ -741,11 +851,9 @@
     }
 
     function switchView(viewName) {
-      // Sembunyikan semua seksyen
       document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
       document.getElementById(`view-${viewName}`).classList.remove('hidden');
 
-      // Kemas kini status aktif pada menu sidebar
       document.querySelectorAll('.nav-item').forEach(btn => {
         btn.classList.remove('bg-teal-600', 'text-white', 'shadow-md', 'shadow-teal-600/25', 'font-semibold');
         btn.classList.add('text-slate-300', 'hover:bg-slate-800/80', 'hover:text-white', 'font-medium');
@@ -757,18 +865,20 @@
         activeBtn.classList.add('bg-teal-600', 'text-white', 'shadow-md', 'shadow-teal-600/25', 'font-semibold');
       }
 
-      // Kemas kini tajuk halaman
       const titles = {
-        dashboard: ['Papan Pemuka Pemantauan', 'Ringkasan prestasi pengurusan RORO & pematuhan kebersihan'],
+        dashboard: ['Papan Pemuka Pemantauan', 'Unit Penyeliaan Hospital Kemaman • Ringkasan Prestasi RORO'],
         borang: ['Borang Pemantauan RORO', 'Rekod pemeriksaan baharu atau kemas kini audit lapangan'],
         rekod: ['Senarai Rekod Pemantauan', 'Pangkalan data penuh pemantauan RORO Hospital Kemaman'],
-        log: ['Log Sistem & Jejak Audit', 'Rekod aktiviti pengguna dan perubahan pangkalan data'],
-        tetapan: ['Tetapan Sambungan API', 'Konfigurasi pautan Google Apps Script Web App']
+        laporan: ['Laporan Bulanan & Cetakan PDF', 'Jana laporan rasmi dari 1 haribulan hingga hujung bulan'],
+        log: ['Log Sistem & Jejak Audit', 'Rekod aktiviti pengguna dan perubahan pangkalan data']
       };
       document.getElementById('pageTitle').textContent = titles[viewName][0];
       document.getElementById('pageSubtitle').textContent = titles[viewName][1];
 
-      // Tutup sidebar di paparan mudah alih
+      if (viewName === 'laporan') {
+        renderMonthlyReport();
+      }
+
       if (window.innerWidth < 1024) {
         const sidebar = document.getElementById('sidebar');
         if (!sidebar.classList.contains('-translate-x-full')) {
@@ -781,7 +891,9 @@
     // KOMUNIKASI API GOOGLE APPS SCRIPT
     // =========================================================================
     async function loadAllData() {
-      if (!appState.webAppUrl || !appState.webAppUrl.startsWith('http')) {
+      if (!WEB_APP_URL || !WEB_APP_URL.startsWith('http')) {
+        document.getElementById('connectionLabel').textContent = 'Sila set WEB_APP_URL';
+        document.getElementById('connectionLabel').className = 'text-[11px] text-amber-400 truncate mt-0.5';
         return;
       }
 
@@ -789,7 +901,7 @@
       refreshBtn.classList.add('opacity-60', 'pointer-events-none');
 
       try {
-        const res = await fetch(`${appState.webAppUrl}?action=getAllData`);
+        const res = await fetch(`${WEB_APP_URL}?action=getAllData`);
         const json = await res.json();
 
         if (json.status === 'success') {
@@ -798,15 +910,27 @@
 
           document.getElementById('sidebarRecordCount').textContent = appState.rekod.length;
           document.getElementById('logCountBadge').textContent = `${appState.logs.length} Log`;
+          document.getElementById('connectionLabel').textContent = 'Terhubung ke Google Sheet';
+          document.getElementById('connectionLabel').className = 'text-[11px] text-emerald-400 truncate mt-0.5';
+
+          // Auto-pilih bulan berdasarkan rekod terkini jika ada
+          if (appState.rekod.length > 0 && appState.rekod[0].tarikhMasa) {
+            const m = appState.rekod[0].tarikhMasa.match(/^(\d{4})-(\d{2})/);
+            if (m) {
+              document.getElementById('reportYear').value = m[1];
+              document.getElementById('reportMonth').value = m[2];
+            }
+          }
 
           renderDashboard();
           renderRecordsTable();
+          renderMonthlyReport();
           renderLogsTable();
         } else {
           showToast('Gagal memuatkan data: ' + json.message, 'error');
         }
       } catch (err) {
-        showToast('Ralat sambungan ke Web App. Sila semak URL & kebenaran akses.', 'error');
+        showToast('Ralat sambungan ke Web App. Pastikan URL & deployment betul.', 'error');
       } finally {
         refreshBtn.classList.remove('opacity-60', 'pointer-events-none');
       }
@@ -814,9 +938,8 @@
 
     async function handleFormSubmit(e) {
       e.preventDefault();
-      if (!appState.webAppUrl || !appState.webAppUrl.startsWith('http')) {
-        showToast('Sila tetapkan URL Web App terlebih dahulu di menu Tetapan.', 'error');
-        switchView('tetapan');
+      if (!WEB_APP_URL || !WEB_APP_URL.startsWith('http')) {
+        showToast('Sila masukkan URL Web App dalam kod HTML terlebih dahulu.', 'error');
         return;
       }
 
@@ -846,13 +969,13 @@
       };
 
       try {
-        const res = await fetch(appState.webAppUrl, {
+        const res = await fetch(WEB_APP_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({
             action: isEdit ? 'updateRecord' : 'addRecord',
             record: recordPayload,
-            userEmail: appState.userEmail
+            userEmail: recordPayload.namaPenyelia || 'Unit Penyeliaan Hospital Kemaman'
           })
         });
 
@@ -877,13 +1000,13 @@
       if (!confirm(`Adakah anda pasti ingin memadam rekod ${idRekod}?`)) return;
 
       try {
-        const res = await fetch(appState.webAppUrl, {
+        const res = await fetch(WEB_APP_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({
             action: 'deleteRecord',
             idRekod: idRekod,
-            userEmail: appState.userEmail
+            userEmail: 'Unit Penyeliaan Hospital Kemaman'
           })
         });
 
@@ -900,13 +1023,92 @@
     }
 
     // =========================================================================
+    // LAPORAN BULANAN (1 HARIBULAN HINGGA HUJUNG BULAN) & PDF
+    // =========================================================================
+    function renderMonthlyReport() {
+      const month = document.getElementById('reportMonth').value;
+      const year = document.getElementById('reportYear').value;
+
+      // Kira hari terakhir dalam bulan tersebut (28, 29, 30, atau 31)
+      const lastDay = new Date(Number(year), Number(month), 0).getDate();
+      const lastDayStr = String(lastDay).padStart(2, '0');
+      const namaBulan = NAMA_BULAN[month] || month;
+
+      // Kemas kini tarikh tempoh & tajuk
+      document.getElementById('repDateRangeText').textContent = `Tempoh: 01/${month}/${year} hingga ${lastDayStr}/${month}/${year}`;
+      document.getElementById('repMainHeading').textContent = `LAPORAN PEMANTAUAN HARIAN TONG RORO & KEBERSIHAN RUMAH SAMPAH BAGI BULAN ${namaBulan} ${year}`;
+
+      const now = new Date();
+      document.getElementById('repGeneratedAt').textContent = `Tarikh Dijana: ${now.toLocaleDateString('ms-MY')} ${now.toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit' })}`;
+
+      // Tapis rekod dari 1 haribulan hingga hujung bulan (YYYY-MM-01 hingga YYYY-MM-lastDay)
+      const startPrefix = `${year}-${month}-01`;
+      const endPrefix = `${year}-${month}-${lastDayStr}`;
+
+      const monthlyRecords = appState.rekod
+        .filter(r => {
+          const datePart = (r.tarikhMasa || '').slice(0, 10); // Format YYYY-MM-DD
+          return datePart >= startPrefix && datePart <= endPrefix;
+        })
+        .sort((a, b) => (a.tarikhMasa || '').localeCompare(b.tarikhMasa || '')); // Susun menaik dari 1hb ke hujung bulan
+
+      // Kira statistik bulanan
+      const total = monthlyRecords.length;
+      const totalBerat = monthlyRecords.reduce((s, r) => s + (Number(r.anggaranBerat) || 0), 0);
+      const memuaskan = monthlyRecords.filter(r => (r.statusKebersihan || '').toLowerCase().startsWith('memuaskan')).length;
+      const kurang = total - memuaskan;
+      const pct = total > 0 ? Math.round((memuaskan / total) * 100) : 0;
+
+      document.getElementById('repStatTotal').textContent = `${total} Kali`;
+      document.getElementById('repStatBerat').textContent = `${totalBerat.toFixed(1)} Tan`;
+      document.getElementById('repStatMemuaskan').textContent = `${memuaskan} (${pct}%)`;
+      document.getElementById('repStatKurang').textContent = `${kurang} Rekod`;
+
+      // Papar jadual rasmi
+      const tbody = document.getElementById('reportTableBody');
+      if (monthlyRecords.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="13" class="border border-slate-400 py-8 text-center text-slate-500">Tiada rekod pemantauan dicatatkan dari 01/${month}/${year} hingga ${lastDayStr}/${month}/${year}.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = monthlyRecords.map((r, idx) => `
+        <tr class="${idx % 2 === 1 ? 'bg-slate-50/50' : 'bg-white'}">
+          <td class="border border-slate-400 py-1.5 px-2 text-center font-semibold">${idx + 1}</td>
+          <td class="border border-slate-400 py-1.5 px-2 whitespace-nowrap">${r.tarikhMasa}</td>
+          <td class="border border-slate-400 py-1.5 px-2 font-mono text-[10px] whitespace-nowrap">${r.idRekod}</td>
+          <td class="border border-slate-400 py-1.5 px-2">
+            <div class="font-bold">${r.namaPenyelia}</div>
+            <div class="text-[10px] text-slate-600">${r.jawatanGred}</div>
+          </td>
+          <td class="border border-slate-400 py-1.5 px-2">${r.syarikatKonsesi}</td>
+          <td class="border border-slate-400 py-1.5 px-2 text-center font-semibold">${r.anggaranBerat}</td>
+          <td class="border border-slate-400 py-1.5 px-2 text-center">${r.statusTong}</td>
+          <td class="border border-slate-400 py-1.5 px-1.5 text-center font-bold ${r.auditLantai === 'PATUH' ? 'text-emerald-700' : 'text-rose-700'}">${r.auditLantai === 'PATUH' ? '✓' : '✗'}</td>
+          <td class="border border-slate-400 py-1.5 px-1.5 text-center font-bold ${r.auditVektor === 'PATUH' ? 'text-emerald-700' : 'text-rose-700'}">${r.auditVektor === 'PATUH' ? '✓' : '✗'}</td>
+          <td class="border border-slate-400 py-1.5 px-1.5 text-center font-bold ${r.auditBau === 'PATUH' ? 'text-emerald-700' : 'text-rose-700'}">${r.auditBau === 'PATUH' ? '✓' : '✗'}</td>
+          <td class="border border-slate-400 py-1.5 px-1.5 text-center font-bold ${r.auditFizikal === 'PATUH' ? 'text-emerald-700' : 'text-rose-700'}">${r.auditFizikal === 'PATUH' ? '✓' : '✗'}</td>
+          <td class="border border-slate-400 py-1.5 px-2 font-semibold">${r.statusKebersihan}</td>
+          <td class="border border-slate-400 py-1.5 px-2">${r.catatanTindakan || '-'}</td>
+        </tr>
+      `).join('');
+    }
+
+    function updateSignatureNames() {
+      const ketua = document.getElementById('reportKetuaName').value.trim().toUpperCase();
+      const pengarah = document.getElementById('reportPengarahName').value.trim().toUpperCase();
+
+      document.getElementById('sigKetuaNameDisplay').textContent = ketua ? `( ${ketua} )` : '( NAMA & COP RASMI )';
+      document.getElementById('sigPengarahNameDisplay').textContent = pengarah ? `( ${pengarah} )` : '( NAMA & COP RASMI )';
+    }
+
+    // =========================================================================
     // PAPARAN PAPAN PEMUKA & CARTA
     // =========================================================================
     function renderDashboard() {
       const list = appState.rekod;
       const total = list.length;
       const totalBerat = list.reduce((sum, r) => sum + (Number(r.anggaranBerat) || 0), 0);
-      const memuaskanCount = list.filter(r => r.statusKebersihan.toLowerCase().includes('memuaskan') && !r.statusKebersihan.toLowerCase().includes('kurang') && !r.statusKebersihan.toLowerCase().includes('tidak')).length;
+      const memuaskanCount = list.filter(r => r.statusKebersihan.toLowerCase().startsWith('memuaskan')).length;
       const isuCount = total - memuaskanCount;
       const kadarPatuh = total > 0 ? Math.round((memuaskanCount / total) * 100) : 0;
 
@@ -916,7 +1118,6 @@
       document.getElementById('kpiPatuhSub').textContent = `${memuaskanCount} daripada ${total} rekod memuaskan`;
       document.getElementById('kpiIsu').textContent = isuCount;
 
-      // Jadual 5 Rekod Terkini
       const recentBody = document.getElementById('recentTableBody');
       if (list.length === 0) {
         recentBody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400 text-xs">Tiada data rekod dijumpai.</td></tr>`;
@@ -961,7 +1162,6 @@
         countTidak('auditFizikal')
       ];
 
-      // Carta Bar 4 Kriteria Audit
       const ctx1 = document.getElementById('auditChart').getContext('2d');
       if (appState.auditChartInstance) appState.auditChartInstance.destroy();
       appState.auditChartInstance = new Chart(ctx1, {
@@ -981,7 +1181,6 @@
         }
       });
 
-      // Carta Doughnut Status Tong
       const diangkut = list.filter(r => r.statusTong.includes('DIANGKUT')).length;
       const diisi = list.filter(r => r.statusTong.includes('DIISI')).length;
       const lain = list.length - diangkut - diisi;
@@ -1269,7 +1468,7 @@
       const toastMsg = document.getElementById('toastMsg');
       toastMsg.textContent = msg;
 
-      toast.className = 'fixed bottom-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl text-white text-xs font-bold transition-all';
+      toast.className = 'no-print fixed bottom-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl text-white text-xs font-bold transition-all';
       if (type === 'success') toast.classList.add('bg-emerald-600');
       else if (type === 'error') toast.classList.add('bg-rose-600');
       else toast.classList.add('bg-slate-800');
